@@ -53,11 +53,26 @@ app.delete("/user", async (req, res) => {
     }
 })
 
-app.patch("/user", async (req, res) => {
-    try{
-        const userId = req.body.userId
+app.patch("/user/:userId", async (req, res) => {
+    try {
+        const ALLOWED_UPDATES = [
+            "userId",
+            "photoUrl",
+            "about",
+            "gender",
+            "skills",
+            "age"
+        ]
+        const isUpdateAllowed = Object.keys(data).every((key) => {
+            ALLOWED_UPDATES.includes(key)
+        })
+
+        if (!isUpdateAllowed) {
+            throw new Error("Update not allowed.")
+        }
+        const userId = req.params?.userId
         const data = req.body
-        const user = await User.findByIdAndUpdate({ _id: userId}, data, {
+        const user = await User.findByIdAndUpdate({ _id: userId }, data, {
             returnDocument: "after",
             runValidators: true
         })
@@ -72,6 +87,6 @@ connectDb().then(() => {
     app.listen(3000, () => {
         console.log("Server is running on port 3000")
     })
-}).catch((err) => { 
-    console.log("Error while connecting to database; Error: " + err.message) 
+}).catch((err) => {
+    console.log("Error while connecting to database; Error: " + err.message)
 })
