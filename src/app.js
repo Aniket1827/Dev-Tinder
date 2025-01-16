@@ -1,19 +1,61 @@
+const bcrypt = require('bcrypt')
 const express = require('express')
-const { connectDb } = require('./config/database')
+const jwt = require('jsonwebtoken')
+const validator = require('validator')
+const cookieParser = require('cookie-parser')
+
 const User = require("./model/user")
+const { userauth } = require("./middlewares/auth")
+const { connectDb } = require('./config/database')
+const { validateSignUpData } = require("./utils/validation")
 
 const app = express()
 
-// Converts the request body in a json readable format for all the routes
-app.use(express.json())
+app.use(express.json()) // Converts the request body in a json readable format for all the routes
+app.use(cookieParser()) // Parses the cookies attached to the request
+
 
 app.use("/signup", async (req, res) => {
-    const user = new User(req.body)
+    validateSignUpData(req)
+    const { firstName, lastName, emailId, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10)
+    const user = new User({
+        firstName,
+        lastName,
+        emailId,
+        password: hashedPassword
+    })
     try {
         await user.save()
         res.send("User added successfully!!")
     } catch (err) {
         res.send("Error while adding user; Error: " + err.message)
+    }
+})
+
+app.post("/login", async (req, res) => {
+    try {
+
+        const { emailId, password } = req.body
+        if (!validator.isEmail(emailId)) {
+            res.status(400).send("Please enter a valid email id.")
+        }
+
+        const storedUserDetails = await User.findOne({ emailId: emailId })
+        if (!storedUserDetails) {
+            throw new Error("Invalid credentials")
+        }
+
+        const isPasswordValid = await user.validateUserPassword(password)
+        if (isPasswordValid) {
+            const token = await user.getJWT(storedUserDetails)
+            res.cookie("token", token)
+            res.send("Login successful")
+        } else {
+            res.status(400).send("Invalid credentials")
+        }
+    } catch (err) {
+        res.status(400).send("Error occured while logging in; Error: " + err.message)
     }
 })
 
