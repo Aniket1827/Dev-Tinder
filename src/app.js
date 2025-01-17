@@ -8,6 +8,7 @@ const User = require("./model/user")
 const authRouter = require('./routes/auth')
 const profileRouter = require('./routes/profile')
 const requestRouter = require('./routes/request')
+const userRouter = require('./routes/user')
 
 const { userauth } = require("./middlewares/auth")
 const { connectDb } = require('./config/database')
@@ -20,6 +21,7 @@ app.use(cookieParser()) // Parses the cookies attached to the request
 app.use("/", authRouter)
 app.use("/", profileRouter)
 app.use("/", requestRouter)
+app.use("/", userRouter)
 
 app.get("/user", async (req, res) => {
     try {
